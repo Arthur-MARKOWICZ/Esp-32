@@ -1,5 +1,4 @@
 #include <WiFi.h>
-#include <WebServer.h>  // Biblioteca para servidor web no ESP32
 #include <DHT.h>
 
 #define DHTPIN 2          // Pino onde o DHT22 está conectado
@@ -12,7 +11,7 @@
 
 DHT dht(DHTPIN, DHTTYPE);  // Cria o objeto DHT para o sensor
 
-WebServer server(80); // Cria o servidor web na porta 80
+WiFiServer server(80);  // Cria o servidor web na porta 80
 
 void setup() {
   Serial.begin(115200);   // Inicializa o monitor serial
@@ -31,49 +30,74 @@ void setup() {
   Serial.print("IP do ESP32: ");
   Serial.println(WiFi.localIP());
 
-  // Rota para a página principal (onde exibimos a temperatura)
-  server.on("/", HTTP_GET, []() {
-    float temp = dht.readTemperature(); // Lê a temperatura
-
-    // Verifica se houve falha na leitura
-    if (isnan(temp)) {
-      server.send(500, "text/plain", "Falha na leitura do sensor DHT22");
-      return;
-    }
-
-    // Controla os LEDs com base na temperatura
-    if (temp >= 20 && temp <= 25) {
-      digitalWrite(LED1, HIGH);  // Acende o LED1
-      digitalWrite(LED2, LOW);   // Apaga o LED2
-    } else {
-      digitalWrite(LED1, LOW);   // Apaga o LED1
-      digitalWrite(LED2, HIGH);  // Acende o LED2
-    }
-
-    // Monta o conteúdo HTML com a temperatura
-    String htmlContent = "<html><body>";
-    htmlContent += "<h1>Temperatura e Controle de LEDs</h1>";
-    htmlContent += "<p>Temperatura: " + String(temp) + " °C</p>";
-
-    // Exibe o estado dos LEDs
-    if (temp >= 20 && temp <= 25) {
-      htmlContent += "<p>LED 1 está ACESO</p>";
-      htmlContent += "<p>LED 2 está APAGADO</p>";
-    } else {
-      htmlContent += "<p>LED 1 está APAGADO</p>";
-      htmlContent += "<p>LED 2 está ACESO</p>";
-    }
-
-    htmlContent += "<p><a href='/'>Atualizar</a></p>";
-    htmlContent += "</body></html>";
-
-    server.send(200, "text/html", htmlContent);  // Envia a página HTML para o navegador
-  });
-
-  // Inicia o servidor web
+  // Inicia o servidor
   server.begin();
 }
 
 void loop() {
-  server.handleClient();  // A função handleClient() cuida das requisições HTTP
+  WiFiClient client = server.available();  // Verifica se um cliente fez uma requisição
+
+  if (client) {
+    Serial.println("Novo cliente conectado");
+    String currentLine = "";  // Armazena a linha recebida do cliente
+
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();  // Lê o caractere recebido do cliente
+        Serial.write(c);
+
+        // Se encontrou uma linha em branco, significa que a requisição foi recebida
+        if (c == '\n' && currentLine.length() == 0) {
+          // Lê a temperatura
+          float temp = dht.readTemperature();
+          
+          // Verifica se houve falha na leitura
+          if (isnan(temp)) {
+            client.println("HTTP/1.1 500 Internal Server Error");
+            client.println("Content-Type: text/plain");
+            client.println();
+            client.println("Falha na leitura do sensor DHT22");
+            break;
+          }
+
+          // Controla os LEDs com base na temperatura
+          if (temp >= 20 && temp <= 25) {
+            digitalWrite(LED1, HIGH);  // Acende o LED1
+            digitalWrite(LED2, LOW);   // Apaga o LED2
+          } else {
+            digitalWrite(LED1, LOW);   // Apaga o LED1
+            digitalWrite(LED2, HIGH);  // Acende o LED2
+          }
+
+          // Responde com um conteúdo HTML
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-Type: text/html");
+          client.println("Connection: close");
+          client.println();
+
+          client.println("<html><body>");
+          client.println("<h1>Temperatura e Controle de LEDs</h1>");
+          client.println("<p>Temperatura: " + String(temp) + " °C</p>");
+          
+          if (temp >= 20 && temp <= 25) {
+            client.println("<p>LED 1 está ACESO</p>");
+            client.println("<p>LED 2 está APAGADO</p>");
+          } else {
+            client.println("<p>LED 1 está APAGADO</p>");
+            client.println("<p>LED 2 está ACESO</p>");
+          }
+
+          client.println("<p><a href='/'>Atualizar</a></p>");
+          client.println("</body></html>");
+          break;
+        } else if (c == '\n') {
+          currentLine = "";
+        } else if (c != '\r') {
+          currentLine += c;
+        }
+      }
+    }
+    client.stop();  // Fecha a conexão com o cliente
+    Serial.println("Cliente desconectado");
+  }
 }
