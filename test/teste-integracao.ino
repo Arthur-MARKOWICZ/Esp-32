@@ -6,8 +6,8 @@
 #define LED1 19            // LED 1
 #define LED2 23          // LED 2
 
-#define WIFI_SSID "Arthur"
-#define WIFI_PASSWORD "test1234"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 
 DHT dht(DHTPIN, DHTTYPE);  // Cria o objeto DHT para o sensor
 
