@@ -3,8 +3,8 @@
 
 #define DHTPIN 4          // Pino onde o DHT22 está conectado
 #define DHTTYPE DHT22     // Tipo do sensor DHT22
-#define LED1 5            // LED 1
-#define LED2 21          // LED 2
+#define LED1 19            // LED 1
+#define LED2 23          // LED 2
 
 #define WIFI_SSID "Arthur"
 #define WIFI_PASSWORD "test1234"
@@ -50,6 +50,7 @@ void loop() {
         if (c == '\n' && currentLine.length() == 0) {
           // Lê a temperatura
           float temp = dht.readTemperature();
+          float umidade = dht.readHumidity();
 
           // Verifica se houve falha na leitura
           if (isnan(temp)) {
@@ -77,14 +78,15 @@ void loop() {
 
           client.println("<html><body>");
           client.println("<h1>Temperatura e Controle de LEDs</h1>");
-          client.println("<p>Temperatura: " + String(temp) + " °C</p>");
+          client.println("<p>Temperatura: " + String(temp) + " C</p>");
+          client.println("<p>Umidade: " + String(umidade) + " % </p>");
 
           if (temp >= 20 && temp <= 25) {
-            client.println("<p>LED 1 está ACESO</p>");
-            client.println("<p>LED 2 está APAGADO</p>");
+            client.println("<p>LED 1 esta ACESO</p>");
+            client.println("<p>LED 2 esta APAGADO</p>");
           } else {
-            client.println("<p>LED 1 está APAGADO</p>");
-            client.println("<p>LED 2 está ACESO</p>");
+            client.println("<p>LED 1 esta APAGADO</p>");
+            client.println("<p>LED 2 esta ACESO</p>");
           }
 
           client.println("<p><a href='/'>Atualizar</a></p>");
