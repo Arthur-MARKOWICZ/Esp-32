@@ -1,0 +1,350 @@
+#include <WiFi.h>
+#include <DHT.h>
+#include <vector>
+
+#define DHTPIN 4
+#define DHTTYPE DHT22
+#define LED1 19
+#define LED2 23
+
+#define WIFI_SSID "Arthur"
+#define WIFI_PASSWORD "test1234"
+
+DHT dht(DHTPIN, DHTTYPE);
+
+WiFiServer server(80);
+std::vector<float> temperaturas;
+std::vector<float> umidades;
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Conectando-se ao WiFi...");
+  }
+  Serial.println("Conectado ao WiFi!");
+  Serial.print("IP do ESP32: ");
+  Serial.println(WiFi.localIP());
+
+  server.begin();
+}
+
+void loop() {
+  WiFiClient client = server.available();
+
+  if (client) {
+    Serial.println("Novo cliente conectado");
+    String currentLine = "";
+
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        Serial.write(c);
+
+        if (c == '\n' && currentLine.length() == 0) {
+          float temp = dht.readTemperature();
+          float umidade = dht.readHumidity();
+
+          if (isnan(temp) || isnan(umidade)) {
+            client.println("HTTP/1.1 500 Internal Server Error");
+            client.println("Content-Type: text/plain");
+            client.println();
+            client.println("Falha na leitura do sensor DHT22");
+            break;
+          }
+
+          if (temperaturas.size() >= 50) temperaturas.erase(temperaturas.begin());
+          if (umidades.size() >= 50) umidades.erase(umidades.begin());
+          temperaturas.push_back(temp);
+          umidades.push_back(umidade);
+
+          float media_temp = 0;
+          for (float t : temperaturas) media_temp += t;
+          media_temp /= temperaturas.size();
+
+          if (temp >= 20 && temp <= 30) {
+            digitalWrite(LED1, HIGH);
+            digitalWrite(LED2, LOW);
+          } else {
+            digitalWrite(LED1, LOW);
+            digitalWrite(LED2, HIGH);
+          }
+
+          String jsonTemps = "[";
+          for (size_t i = 0; i < temperaturas.size(); i++) {
+            jsonTemps += String(temperaturas[i], 2);
+            if (i < temperaturas.size() - 1) jsonTemps += ",";
+          }
+          jsonTemps += "]";
+
+          String jsonUmid = "[";
+          for (size_t i = 0; i < umidades.size(); i++) {
+            jsonUmid += String(umidades[i], 2);
+            if (i < umidades.size() - 1) jsonUmid += ",";
+          }
+          jsonUmid += "]";
+
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-Type: text/html");
+          client.println("Connection: close");
+          client.println();
+
+          client.println("<!DOCTYPE html><html><head><title>Temperatura</title>");
+          client.println("<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>");
+          client.println("<style>");
+          client.println(R"rawliteral(
+            @import url('https://fonts.googleapis.com/css2?family=Rubik+Moonrocks&family=Orbitron:wght@700&display=swap');
+
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+
+            body {
+              font-family: 'Rubik Moonrocks', cursive;
+              background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+              color: #e0f7fa;
+              padding: 30px 15px;
+              min-height: 100vh;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              animation: bgPulse 20s ease-in-out infinite;
+              overflow-x: hidden;
+            }
+
+            @keyframes bgPulse {
+              0%, 100% {
+                background-position: 0% 50%;
+              }
+              50% {
+                background-position: 100% 50%;
+              }
+            }
+
+            h1 {
+              font-family: 'Orbitron', sans-serif;
+              font-size: 3.5rem;
+              background: linear-gradient(45deg, #ff416c, #ff4b2b);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              text-shadow: 0 0 15px #ff416c, 0 0 30px #ff4b2b;
+              margin-bottom: 25px;
+              animation: flicker 3s infinite alternate;
+              text-align: center;
+            }
+
+            @keyframes flicker {
+              0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                opacity: 1;
+              }
+              20%, 22%, 24%, 55% {
+                opacity: 0.4;
+              }
+            }
+
+            p {
+              font-size: 1.4rem;
+              text-align: center;
+              margin: 12px 0;
+              color: #e0f7fa;
+              text-shadow: 0 0 6px #00796b;
+              animation: glowText 4s ease-in-out infinite alternate;
+            }
+
+            @keyframes glowText {
+              from {
+                text-shadow: 0 0 5px #00e676, 0 0 15px #00e676;
+                color: #b9f6ca;
+              }
+              to {
+                text-shadow: 0 0 20px #00c853, 0 0 40px #00c853;
+                color: #a5d6a7;
+              }
+            }
+
+            .canvas-container {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              width: 90vw;
+              max-width: 750px;
+              gap: 40px;
+              margin-top: 40px;
+              background: rgba(0, 0, 0, 0.35);
+              padding: 25px;
+              border-radius: 20px;
+              box-shadow:
+                0 0 20px 3px #00e676,
+                inset 0 0 30px 6px #00c853;
+              backdrop-filter: blur(12px);
+              animation: pulseBorder 5s ease-in-out infinite alternate;
+            }
+
+            @keyframes pulseBorder {
+              0% {
+                box-shadow:
+                  0 0 15px 2px #00e676,
+                  inset 0 0 20px 4px #00c853;
+              }
+              100% {
+                box-shadow:
+                  0 0 30px 6px #76ff03,
+                  inset 0 0 40px 10px #64dd17;
+              }
+            }
+
+            canvas {
+              width: 100% !important;
+              height: 320px !important;
+              border-radius: 15px;
+              background: linear-gradient(135deg, #004d40, #00796b);
+              box-shadow:
+                0 8px 20px rgba(0, 230, 118, 0.6),
+                inset 0 0 40px rgba(0, 230, 118, 0.8);
+              transition: transform 0.3s ease;
+              cursor: pointer;
+            }
+
+            canvas:hover {
+              transform: scale(1.05) rotate(2deg);
+              box-shadow:
+                0 12px 28px rgba(0, 255, 110, 0.9),
+                inset 0 0 60px rgba(0, 255, 110, 1);
+            }
+
+            a {
+              display: inline-block;
+              margin-top: 25px;
+              padding: 14px 36px;
+              font-family: 'Orbitron', sans-serif;
+              font-weight: 700;
+              font-size: 1.3rem;
+              text-transform: uppercase;
+              color: #fff;
+              background: linear-gradient(45deg, #ff4b2b, #ff416c);
+              border-radius: 50px;
+              box-shadow:
+                0 0 15px #ff4b2b,
+                0 0 30px #ff416c;
+              text-decoration: none;
+              transition: background 0.5s ease, box-shadow 0.5s ease;
+              user-select: none;
+              animation: pulseButton 3s infinite ease-in-out;
+            }
+
+            a:hover {
+              background: linear-gradient(45deg, #ff416c, #ff4b2b);
+              box-shadow:
+                0 0 25px #ff416c,
+                0 0 45px #ff4b2b;
+              transform: scale(1.1);
+            }
+
+            @keyframes pulseButton {
+              0%, 100% {
+                box-shadow:
+                  0 0 15px #ff4b2b,
+                  0 0 30px #ff416c;
+              }
+              50% {
+                box-shadow:
+                  0 0 35px #ff4b2b,
+                  0 0 60px #ff416c;
+              }
+            }
+
+            /* Condição "favorável para mofo" com efeito dramático */
+            .condition {
+              font-weight: 900;
+              font-size: 1.6rem;
+              color: #ff1744;
+              text-shadow:
+                0 0 6px #ff1744,
+                0 0 12px #ff1744,
+                0 0 18px #f50057;
+              animation: pulseWarning 2.5s infinite alternate;
+              margin-top: 15px;
+            }
+
+            @keyframes pulseWarning {
+              0% {
+                text-shadow:
+                  0 0 8px #ff1744,
+                  0 0 16px #f50057,
+                  0 0 24px #ff1744;
+                color: #ff1744;
+              }
+              100% {
+                text-shadow:
+                  0 0 20px #f50057,
+                  0 0 30px #ff1744,
+                  0 0 40px #f50057;
+                color: #ff80ab;
+              }
+            }
+
+            /* Remove a exibição da meta refresh para evitar mostrar no body */
+            meta[http-equiv="refresh"] {
+              display: none;
+            }
+          )rawliteral");
+          client.println("</style></head><body>");
+          client.println("<meta http-equiv='refresh' content='10'>");
+          client.println("<h1>Temperatura e Controle de LEDs</h1>");
+          client.println("<p>Temperatura atual: " + String(temp) + " °C</p>");
+          client.println("<p>Umidade atual: " + String(umidade) + " %</p>");
+
+          if (temp >= 20 && temp <= 30 && umidade >= 60) {
+            client.println("<p class='condition'>Condições favoráveis para formação de mofo</p>");
+          } else {
+            client.println("<p>Condições desfavoráveis para formação de mofo</p>");
+          }
+
+          client.println("<p>Média das temperaturas (últimas leituras): " + String(media_temp, 2) + " °C</p>");
+
+          client.println("<div class='canvas-container'>");
+          client.println("<canvas id='tempChart'></canvas>");
+          client.println("<canvas id='umidChart'></canvas>");
+          client.println("</div>");
+
+          client.println("<script>");
+          client.println("const tempData = " + jsonTemps + ";");
+          client.println("const umidData = " + jsonUmid + ";");
+          client.println("const labels = tempData.map((_, i) => i + 1);");
+
+          client.println("new Chart(document.getElementById('tempChart').getContext('2d'), {");
+          client.println("  type: 'line',");
+          client.println("  data: { labels: labels, datasets: [{ label: 'Temperatura (°C)', data: tempData, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', fill: true, tension: 0.1 }] },");
+          client.println("  options: { scales: { y: { beginAtZero: false } } }");
+          client.println("});");
+
+          client.println("new Chart(document.getElementById('umidChart').getContext('2d'), {");
+          client.println("  type: 'line',");
+          client.println("  data: { labels: labels, datasets: [{ label: 'Umidade (%)', data: umidData, borderColor: 'rgba(255,99,132,1)', backgroundColor: 'rgba(255,99,132,0.2)', fill: true, tension: 0.1 }] },");
+          client.println("  options: { scales: { y: { beginAtZero: false } } }");
+          client.println("});");
+          client.println("</script>");
+
+          client.println("<p><a href='/'>Atualizar</a></p>");
+          client.println("</body></html>");
+
+          break;
+        } else if (c == '\n') {
+          currentLine = "";
+        } else if (c != '\r') {
+          currentLine += c;
+        }
+      }
+    }
+    client.stop();
+    Serial.println("Cliente desconectado");
+  }
+}
