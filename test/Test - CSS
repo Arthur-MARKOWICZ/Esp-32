@@ -138,10 +138,6 @@ void loop() {
             h1 {
               font-family: 'Arial';
               font-size: 3.5rem;
-              background: linear-gradient(45deg, #7a9cc6, #8fb7de);
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-              text-shadow: 0 0 10px #a3bed8;
               margin-bottom: 25px;
               text-align: center;
               color: )rawliteral" + colorText + R"rawliteral(;
@@ -153,6 +149,7 @@ void loop() {
               margin: 12px 0;
               color: )rawliteral" + colorText + R"rawliteral(;
               text-shadow: none;
+              font-weight: normal;
             }
 
             .canvas-container {
@@ -205,11 +202,12 @@ void loop() {
             }
 
             .condition {
-              font-weight: 900;
-              font-size: 1.6rem;
+              font-weight: normal;
+              font-size: 1.4rem;
               color: )rawliteral" + colorCondition + R"rawliteral(;
               text-shadow: none;
               margin-top: 15px;
+              text-align: center;
             }
 
             meta[http-equiv="refresh"] {
