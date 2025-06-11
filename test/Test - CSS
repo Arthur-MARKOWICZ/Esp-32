@@ -108,7 +108,7 @@ void loop() {
             }
 
             body {
-              font-family: 'Rubik Moonrocks', cursive;
+              font-family: 'Arial';
               background: linear-gradient(135deg, #d0e6f7, #e3f2fd, #f0f4f8);
               color: #333;
               padding: 30px 15px;
@@ -120,7 +120,7 @@ void loop() {
             }
 
             h1 {
-              font-family: 'Orbitron', sans-serif;
+              font-family: 'Arial';
               font-size: 3.5rem;
               background: linear-gradient(45deg, #7a9cc6, #8fb7de);
               -webkit-background-clip: text;
@@ -200,8 +200,8 @@ void loop() {
           )rawliteral");
           client.println("</style></head><body>");
           client.println("<meta http-equiv='refresh' content='10'>");
-          client.println("<h1>Temperatura e Controle de LEDs</h1>");
-          client.println("<p>Temperatura atual: " + String(temp) + " °C</p>");
+          client.println("<h1>Temperatura e umidade</h1>");
+          client.println("<p>Temperatura atual: " + String(temp) + " C</p>");
           client.println("<p>Umidade atual: " + String(umidade) + " %</p>");
 
           if (temp >= 20 && temp <= 30 && umidade >= 60) {
@@ -210,7 +210,7 @@ void loop() {
             client.println("<p>Condicoes desfavoraveis para formacao de mofo</p>");
           }
 
-          client.println("<p>Media das temperaturas (ultimas leituras): " + String(media_temp, 2) + " °C</p>");
+          client.println("<p>Media das temperaturas (ultimas leituras): " + String(media_temp, 2) + " C</p>");
 
           client.println("<div class='canvas-container'>");
           client.println("<canvas id='tempChart'></canvas>");
@@ -224,7 +224,7 @@ void loop() {
 
           client.println("new Chart(document.getElementById('tempChart').getContext('2d'), {");
           client.println("  type: 'line',");
-          client.println("  data: { labels: labels, datasets: [{ label: 'Temperatura (°C)', data: tempData, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', fill: true, tension: 0.1 }] },");
+          client.println("  data: { labels: labels, datasets: [{ label: 'Temperatura (C)', data: tempData, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', fill: true, tension: 0.1 }] },");
           client.println("  options: { scales: { y: { beginAtZero: false } }, responsive: true, interaction: { mode: 'nearest', intersect: false } }");
           client.println("});");
 
