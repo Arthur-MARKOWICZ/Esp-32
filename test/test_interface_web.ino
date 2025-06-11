@@ -14,6 +14,7 @@ DHT dht(DHTPIN, DHTTYPE);
 
 WiFiServer server(80);
 std::vector<float> temperaturas;
+std::vector<float> umidades;
 
 void setup() {
   Serial.begin(115200);
@@ -61,8 +62,10 @@ void loop() {
 
           if (temperaturas.size() >= 50) {
             temperaturas.erase(temperaturas.begin());
+            umidades.erase(umidades.begin());
           }
           temperaturas.push_back(temp);
+          umidades.push_back(umidade);
 
           float media_temp = 0;
           if (!temperaturas.empty()) {
@@ -80,13 +83,19 @@ void loop() {
             digitalWrite(LED2, HIGH);
           }
 
-  
+          // Gera dados em formato JSON
           String jsonTemps = "[";
+          String jsonUmids = "[";
           for (size_t i = 0; i < temperaturas.size(); i++) {
             jsonTemps += String(temperaturas[i], 2);
-            if (i < temperaturas.size() - 1) jsonTemps += ",";
+            jsonUmids += String(umidades[i], 2);
+            if (i < temperaturas.size() - 1) {
+              jsonTemps += ",";
+              jsonUmids += ",";
+            }
           }
           jsonTemps += "]";
+          jsonUmids += "]";
 
           client.println("HTTP/1.1 200 OK");
           client.println("Content-Type: text/html");
@@ -100,7 +109,7 @@ void loop() {
           client.println("<p>Temperatura atual: " + String(temp) + " C</p>");
           client.println("<p>Umidade atual: " + String(umidade) + " %</p>");
           if (temp >= 20 && temp <= 30 && umidade >= 60) {
-            client.println("<p>Condigoes favoraveis para formacao de mofo</p>");
+            client.println("<p>Condicoes favoraveis para formacao de mofo</p>");
           } else {
             client.println("<p>Condicoes desfavoraveis para formacao de mofo</p>");
           }
@@ -117,28 +126,40 @@ void loop() {
 
           client.println("<script>");
           client.println("const ctx = document.getElementById('tempChart').getContext('2d');");
-          client.println("const data = " + jsonTemps + ";");
-          client.println("const labels = data.map((_, i) => i + 1);"); 
+          client.println("const tempData = " + jsonTemps + ";");
+          client.println("const umidData = " + jsonUmids + ";");
+          client.println("const labels = tempData.map((_, i) => i + 1);");
+
           client.println("const chart = new Chart(ctx, {");
-          client.println("    type: 'line',");
-          client.println("    data: {");
-          client.println("        labels: labels,");
-          client.println("        datasets: [{");
-          client.println("            label: 'Temperatura (C)',");
-          client.println("            data: data,");
-          client.println("            borderColor: 'rgba(75, 192, 192, 1)',");
-          client.println("            backgroundColor: 'rgba(75, 192, 192, 0.2)',");
-          client.println("            fill: true,");
-          client.println("            tension: 0.1");
-          client.println("        }]");
-          client.println("    },");
-          client.println("    options: {");
-          client.println("        scales: {");
-          client.println("            y: {");
-          client.println("                beginAtZero: false");
-          client.println("            }");
-          client.println("        }");
+          client.println("  type: 'line',");
+          client.println("  data: {");
+          client.println("    labels: labels,");
+          client.println("    datasets: [");
+          client.println("      {");
+          client.println("        label: 'Temperatura (C)',");
+          client.println("        data: tempData,");
+          client.println("        borderColor: 'rgba(75, 192, 192, 1)',");
+          client.println("        backgroundColor: 'rgba(75, 192, 192, 0.2)',");
+          client.println("        fill: true,");
+          client.println("        tension: 0.1");
+          client.println("      },");
+          client.println("      {");
+          client.println("        label: 'Umidade (%)',");
+          client.println("        data: umidData,");
+          client.println("        borderColor: 'rgba(255, 99, 132, 1)',");
+          client.println("        backgroundColor: 'rgba(255, 99, 132, 0.2)',");
+          client.println("        fill: true,");
+          client.println("        tension: 0.1");
+          client.println("      }");
+          client.println("    ]");
+          client.println("  },");
+          client.println("  options: {");
+          client.println("    scales: {");
+          client.println("      y: {");
+          client.println("        beginAtZero: false");
+          client.println("      }");
           client.println("    }");
+          client.println("  }");
           client.println("});");
           client.println("</script>");
 
