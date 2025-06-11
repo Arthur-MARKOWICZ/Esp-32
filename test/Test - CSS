@@ -100,7 +100,7 @@ void loop() {
 
           client.println("<!DOCTYPE html><html><head><title>Temperatura</title>");
           client.println("<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>");
-          client.println("<style>");
+                    client.println("<style>");
           client.println(R"rawliteral(
             @import url('https://fonts.googleapis.com/css2?family=Rubik+Moonrocks&family=Orbitron:wght@700&display=swap');
 
@@ -113,7 +113,6 @@ void loop() {
             body {
               font-family: 'Arial';
               background: linear-gradient(135deg, #d0e6f7, #e3f2fd, #f0f4f8);
-              /* cor dinâmica para o texto abaixo */
           )rawliteral" + 
           String("color: ") + colorText + ";" + R"rawliteral(
               padding: 30px 15px;
@@ -128,21 +127,19 @@ void loop() {
             h1 {
               font-family: 'Arial';
               font-size: 3.5rem;
-              background: linear-gradient(45deg, #7a9cc6, #8fb7de);
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-              text-shadow: 0 0 10px #a3bed8;
+              /* Agora o título usa cor dinâmica, não gradiente */
+              color: )rawliteral" + colorText + ";" + R"rawliteral(
+              text-shadow: 0 0 10px rgba(0,0,0,0.2);
               margin-bottom: 25px;
               text-align: center;
+              transition: color 0.5s ease;
             }
 
             p {
               font-size: 1.4rem;
               text-align: center;
               margin: 12px 0;
-              /* cor dinâmica para o texto abaixo */
-          )rawliteral" + 
-          String("color: ") + colorText + ";" + R"rawliteral(
+              color: )rawliteral" + colorText + ";" + R"rawliteral(
               text-shadow: none;
               transition: color 0.5s ease;
             }
@@ -198,15 +195,17 @@ void loop() {
             .condition {
               font-weight: 900;
               font-size: 1.6rem;
-              color: #d32f2f;
+              color: )rawliteral" + colorText + ";" + R"rawliteral(
               text-shadow: none;
               margin-top: 15px;
+              transition: color 0.5s ease;
             }
 
             meta[http-equiv="refresh"] {
               display: none;
             }
           )rawliteral");
+
           client.println("</style></head><body>");
           client.println("<meta http-equiv='refresh' content='10'>");
           client.println("<h1>Temperatura e umidade</h1>");
