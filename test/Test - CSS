@@ -76,6 +76,9 @@ void loop() {
             digitalWrite(LED2, HIGH);
           }
 
+          // Define a cor do texto conforme o LED ligado
+          String colorText = (digitalRead(LED1) == HIGH) ? "green" : "red";
+
           String jsonTemps = "[";
           for (size_t i = 0; i < temperaturas.size(); i++) {
             jsonTemps += String(temperaturas[i], 2);
@@ -110,13 +113,16 @@ void loop() {
             body {
               font-family: 'Arial';
               background: linear-gradient(135deg, #d0e6f7, #e3f2fd, #f0f4f8);
-              color: #333;
+              /* cor dinâmica para o texto abaixo */
+          )rawliteral" + 
+          String("color: ") + colorText + ";" + R"rawliteral(
               padding: 30px 15px;
               min-height: 100vh;
               display: flex;
               flex-direction: column;
               align-items: center;
               overflow-x: hidden;
+              transition: color 0.5s ease;
             }
 
             h1 {
@@ -134,8 +140,11 @@ void loop() {
               font-size: 1.4rem;
               text-align: center;
               margin: 12px 0;
-              color: #444;
+              /* cor dinâmica para o texto abaixo */
+          )rawliteral" + 
+          String("color: ") + colorText + ";" + R"rawliteral(
               text-shadow: none;
+              transition: color 0.5s ease;
             }
 
             .canvas-container {
