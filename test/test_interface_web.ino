@@ -116,11 +116,7 @@ void loop() {
             client.println("<p>Condicoes desfavoraveis para formacao de mofo</p>");
           }
           client.println("<p>Media das temperaturas (ultimas leituras): " + String(media_temp, 2) + " C</p>");
-          if (temp >= 20 && temp <= 30) {
-            client.println("<p>LED 1 esta ACESO</p><p>LED 2 esta APAGADO</p>");
-          } else {
-            client.println("<p>LED 1 esta APAGADO</p><p>LED 2 esta ACESO</p>");
-          }
+      
 
           client.println("<div class='canvas-container'>");
           client.println("<canvas id='tempChart'></canvas>");
