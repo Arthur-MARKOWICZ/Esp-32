@@ -68,16 +68,29 @@ void loop() {
           for (float t : temperaturas) media_temp += t;
           media_temp /= temperaturas.size();
 
+          // Define os LEDs e cores dinâmicas
+          String colorText;
+          String colorChartBorder;
+          String colorChartBackground;
+          String colorCondition;
+
           if (temp >= 20 && temp <= 30) {
             digitalWrite(LED1, HIGH);
             digitalWrite(LED2, LOW);
+
+            colorText = "#008000";              // verde forte para texto
+            colorChartBorder = "rgba(0,128,0,1)";    // verde para borda do gráfico
+            colorChartBackground = "rgba(0,128,0,0.2)"; // verde claro para preenchimento
+            colorCondition = "#008000";          // verde para condição
           } else {
             digitalWrite(LED1, LOW);
             digitalWrite(LED2, HIGH);
-          }
 
-          // Define a cor do texto conforme o LED ligado
-          String colorText = (digitalRead(LED1) == HIGH) ? "green" : "red";
+            colorText = "#8B0000";              // vermelho escuro para texto
+            colorChartBorder = "rgba(139,0,0,1)";     // vermelho para borda do gráfico
+            colorChartBackground = "rgba(139,0,0,0.2)";  // vermelho claro para preenchimento
+            colorCondition = "#8B0000";          // vermelho para condição
+          }
 
           String jsonTemps = "[";
           for (size_t i = 0; i < temperaturas.size(); i++) {
@@ -98,9 +111,9 @@ void loop() {
           client.println("Connection: close");
           client.println();
 
-          client.println("<!DOCTYPE html><html><head><title>Temperatura</title>");
+          client.println("<!DOCTYPE html><html><head><title>Temperatura e Umidade</title>");
           client.println("<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>");
-                    client.println("<style>");
+          client.println("<style>");
           client.println(R"rawliteral(
             @import url('https://fonts.googleapis.com/css2?family=Rubik+Moonrocks&family=Orbitron:wght@700&display=swap');
 
@@ -113,35 +126,33 @@ void loop() {
             body {
               font-family: 'Arial';
               background: linear-gradient(135deg, #d0e6f7, #e3f2fd, #f0f4f8);
-          )rawliteral" + 
-          String("color: ") + colorText + ";" + R"rawliteral(
+              color: )rawliteral" + colorText + R"rawliteral(;
               padding: 30px 15px;
               min-height: 100vh;
               display: flex;
               flex-direction: column;
               align-items: center;
               overflow-x: hidden;
-              transition: color 0.5s ease;
             }
 
             h1 {
               font-family: 'Arial';
               font-size: 3.5rem;
-              /* Agora o título usa cor dinâmica, não gradiente */
-              color: )rawliteral" + colorText + ";" + R"rawliteral(
-              text-shadow: 0 0 10px rgba(0,0,0,0.2);
+              background: linear-gradient(45deg, #7a9cc6, #8fb7de);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              text-shadow: 0 0 10px #a3bed8;
               margin-bottom: 25px;
               text-align: center;
-              transition: color 0.5s ease;
+              color: )rawliteral" + colorText + R"rawliteral(;
             }
 
             p {
               font-size: 1.4rem;
               text-align: center;
               margin: 12px 0;
-              color: )rawliteral" + colorText + ";" + R"rawliteral(
+              color: )rawliteral" + colorText + R"rawliteral(;
               text-shadow: none;
-              transition: color 0.5s ease;
             }
 
             .canvas-container {
@@ -157,6 +168,7 @@ void loop() {
               border-radius: 20px;
               box-shadow: 0 0 15px rgba(120, 150, 180, 0.3);
               backdrop-filter: blur(6px);
+              color: )rawliteral" + colorText + R"rawliteral(;
             }
 
             canvas {
@@ -195,30 +207,29 @@ void loop() {
             .condition {
               font-weight: 900;
               font-size: 1.6rem;
-              color: )rawliteral" + colorText + ";" + R"rawliteral(
+              color: )rawliteral" + colorCondition + R"rawliteral(;
               text-shadow: none;
               margin-top: 15px;
-              transition: color 0.5s ease;
             }
 
             meta[http-equiv="refresh"] {
               display: none;
             }
           )rawliteral");
-
           client.println("</style></head><body>");
           client.println("<meta http-equiv='refresh' content='10'>");
-          client.println("<h1>Temperatura e umidade</h1>");
-          client.println("<p>Temperatura atual: " + String(temp) + " C</p>");
+
+          client.println("<h1>Temperatura e Umidade</h1>");
+          client.println("<p>Temperatura atual: " + String(temp) + " °C</p>");
           client.println("<p>Umidade atual: " + String(umidade) + " %</p>");
 
           if (temp >= 20 && temp <= 30 && umidade >= 60) {
-            client.println("<p class='condition'>Condicoes favoraveis para formacao de mofo</p>");
+            client.println("<p class='condition'>Condições favoráveis para formação de mofo</p>");
           } else {
-            client.println("<p>Condicoes desfavoraveis para formacao de mofo</p>");
+            client.println("<p class='condition'>Condições desfavoráveis para formação de mofo</p>");
           }
 
-          client.println("<p>Media das temperaturas (ultimas leituras): " + String(media_temp, 2) + " C</p>");
+          client.println("<p>Média das temperaturas (últimas leituras): " + String(media_temp, 2) + " °C</p>");
 
           client.println("<div class='canvas-container'>");
           client.println("<canvas id='tempChart'></canvas>");
@@ -232,15 +243,16 @@ void loop() {
 
           client.println("new Chart(document.getElementById('tempChart').getContext('2d'), {");
           client.println("  type: 'line',");
-          client.println("  data: { labels: labels, datasets: [{ label: 'Temperatura (C)', data: tempData, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', fill: true, tension: 0.1 }] },");
+          client.println("  data: { labels: labels, datasets: [{ label: 'Temperatura (°C)', data: tempData, borderColor: '" + colorChartBorder + "', backgroundColor: '" + colorChartBackground + "', fill: true, tension: 0.1 }] },");
           client.println("  options: { scales: { y: { beginAtZero: false } }, responsive: true, interaction: { mode: 'nearest', intersect: false } }");
           client.println("});");
 
           client.println("new Chart(document.getElementById('umidChart').getContext('2d'), {");
           client.println("  type: 'line',");
-          client.println("  data: { labels: labels, datasets: [{ label: 'Umidade (%)', data: umidData, borderColor: 'rgba(255,99,132,1)', backgroundColor: 'rgba(255,99,132,0.2)', fill: true, tension: 0.1 }] },");
+          client.println("  data: { labels: labels, datasets: [{ label: 'Umidade (%)', data: umidData, borderColor: '" + colorChartBorder + "', backgroundColor: '" + colorChartBackground + "', fill: true, tension: 0.1 }] },");
           client.println("  options: { scales: { y: { beginAtZero: false } }, responsive: true, interaction: { mode: 'nearest', intersect: false } }");
           client.println("});");
+
           client.println("</script>");
 
           client.println("<p><a href='/'>Atualizar</a></p>");
