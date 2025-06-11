@@ -1,27 +1,34 @@
 #include <WiFi.h>
+#include <DHT.h>
+#include <vector>
 
-IPAddress staticIP(192, 168, 1, 100); 
-IPAddress gateway(192, 168, 1, 1);  
-IPAddress subnet(255, 255, 0, 0);   
-IPAddress dns(8, 8, 8, 8); 
-const char* ssid = "VISITANTES";
-const char* password = "";
+#define DHTPIN 4
+#define DHTTYPE DHT22
+#define LED1 19
+#define LED2 23
+
+#define WIFI_SSID "Arthur"
+#define WIFI_PASSWORD "test1234"
+
+DHT dht(DHTPIN, DHTTYPE);
 
 WiFiServer server(80);
+std::vector<float> temperaturas;
 
 void setup() {
   Serial.begin(115200);
+  dht.begin();
 
-  WiFi.config(staticIP, gateway, subnet, dns);
-  WiFi.begin(ssid, password);
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
 
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+    delay(1000);
+    Serial.println("Conectando-se ao WiFi...");
   }
-
-  Serial.println("\nConectado!");
-  Serial.print("IP estático: ");
+  Serial.println("Conectado ao WiFi!");
+  Serial.print("IP do ESP32: ");
   Serial.println(WiFi.localIP());
 
   server.begin();
@@ -31,20 +38,124 @@ void loop() {
   WiFiClient client = server.available();
 
   if (client) {
-    while (client.connected() && !client.available()) {
-      delay(1);
+    Serial.println("Novo cliente conectado");
+    String currentLine = "";
+
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        Serial.write(c);
+
+        if (c == '\n' && currentLine.length() == 0) {
+
+          float temp = dht.readTemperature();
+          float umidade = dht.readHumidity();
+
+          if (isnan(temp) || isnan(umidade)) {
+            client.println("HTTP/1.1 500 Internal Server Error");
+            client.println("Content-Type: text/plain");
+            client.println();
+            client.println("Falha na leitura do sensor DHT22");
+            break;
+          }
+
+          if (temperaturas.size() >= 50) {
+            temperaturas.erase(temperaturas.begin());
+          }
+          temperaturas.push_back(temp);
+
+          float media_temp = 0;
+          if (!temperaturas.empty()) {
+            for (float t : temperaturas) {
+              media_temp += t;
+            }
+            media_temp /= temperaturas.size();
+          }
+
+          if (temp >= 20 && temp <= 30) {
+            digitalWrite(LED1, HIGH);
+            digitalWrite(LED2, LOW);
+          } else {
+            digitalWrite(LED1, LOW);
+            digitalWrite(LED2, HIGH);
+          }
+
+          // Convertendo vetor de temperaturas para JSON array
+          String jsonTemps = "[";
+          for (size_t i = 0; i < temperaturas.size(); i++) {
+            jsonTemps += String(temperaturas[i], 2);
+            if (i < temperaturas.size() - 1) jsonTemps += ",";
+          }
+          jsonTemps += "]";
+
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-Type: text/html");
+          client.println("Connection: close");
+          client.println();
+
+          client.println("<html><head><title>Temperatura</title>");
+          client.println("<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>");
+          client.println("</head><body>");
+          client.println("<h1>Temperatura e Controle de LEDs</h1>");
+          client.println("<p>Temperatura atual: " + String(temp) + " °C</p>");
+          client.println("<p>Umidade atual: " + String(umidade) + " %</p>");
+          if (temp >= 20 && temp <= 30 && umidade >= 60) {
+            client.println("<p>Condições favoráveis para formação de mofo</p>");
+          } else {
+            client.println("<p>Condições desfavoráveis para formação de mofo</p>");
+          }
+          client.println("<p>Média das temperaturas (últimas leituras): " + String(media_temp, 2) + " °C</p>");
+          if (temp >= 20 && temp <= 30) {
+            client.println("<p>LED 1 está ACESO</p>");
+            client.println("<p>LED 2 está APAGADO</p>");
+          } else {
+            client.println("<p>LED 1 está APAGADO</p>");
+            client.println("<p>LED 2 está ACESO</p>");
+          }
+
+          // Canvas para o gráfico
+          client.println("<canvas id='tempChart' width='600' height='300'></canvas>");
+
+          // Script para desenhar o gráfico usando Chart.js e os dados JSON
+          client.println("<script>");
+          client.println("const ctx = document.getElementById('tempChart').getContext('2d');");
+          client.println("const data = " + jsonTemps + ";");
+          client.println("const labels = data.map((_, i) => i + 1);"); // simples labels 1, 2, 3 ...
+          client.println("const chart = new Chart(ctx, {");
+          client.println("    type: 'line',");
+          client.println("    data: {");
+          client.println("        labels: labels,");
+          client.println("        datasets: [{");
+          client.println("            label: 'Temperatura (°C)',");
+          client.println("            data: data,");
+          client.println("            borderColor: 'rgba(75, 192, 192, 1)',");
+          client.println("            backgroundColor: 'rgba(75, 192, 192, 0.2)',");
+          client.println("            fill: true,");
+          client.println("            tension: 0.1");
+          client.println("        }]");
+          client.println("    },");
+          client.println("    options: {");
+          client.println("        scales: {");
+          client.println("            y: {");
+          client.println("                beginAtZero: false");
+          client.println("            }");
+          client.println("        }");
+          client.println("    }");
+          client.println("});");
+          client.println("</script>");
+
+          client.println("<p><a href='/'>Atualizar</a></p>");
+          client.println("</body></html>");
+
+          break;
+        } else if (c == '\n') {
+          currentLine = "";
+        } else if (c != '\r') {
+          currentLine += c;
+        }
+      }
     }
-
-    client.readStringUntil('\r');
-    client.flush();
-
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-Type: text/html");
-    client.println("Connection: close");
-    client.println();
-    client.println("<!DOCTYPE html><html><body><h1>teste</h1></body></html>");
-    
-    delay(10);
     client.stop();
+    Serial.println("Cliente desconectado");
   }
 }
