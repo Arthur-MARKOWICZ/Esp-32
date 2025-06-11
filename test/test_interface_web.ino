@@ -80,7 +80,7 @@ void loop() {
             digitalWrite(LED2, HIGH);
           }
 
-          // Convertendo vetor de temperaturas para JSON array
+  
           String jsonTemps = "[";
           for (size_t i = 0; i < temperaturas.size(); i++) {
             jsonTemps += String(temperaturas[i], 2);
@@ -97,36 +97,34 @@ void loop() {
           client.println("<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>");
           client.println("</head><body>");
           client.println("<h1>Temperatura e Controle de LEDs</h1>");
-          client.println("<p>Temperatura atual: " + String(temp) + " °C</p>");
+          client.println("<p>Temperatura atual: " + String(temp) + " C</p>");
           client.println("<p>Umidade atual: " + String(umidade) + " %</p>");
           if (temp >= 20 && temp <= 30 && umidade >= 60) {
-            client.println("<p>Condições favoráveis para formação de mofo</p>");
+            client.println("<p>Condigoes favoraveis para formacao de mofo</p>");
           } else {
-            client.println("<p>Condições desfavoráveis para formação de mofo</p>");
+            client.println("<p>Condicoes desfavoraveis para formacao de mofo</p>");
           }
-          client.println("<p>Média das temperaturas (últimas leituras): " + String(media_temp, 2) + " °C</p>");
+          client.println("<p>Media das temperaturas (ultimas leituras): " + String(media_temp, 2) + " C</p>");
           if (temp >= 20 && temp <= 30) {
-            client.println("<p>LED 1 está ACESO</p>");
-            client.println("<p>LED 2 está APAGADO</p>");
+            client.println("<p>LED 1 esta ACESO</p>");
+            client.println("<p>LED 2 esta APAGADO</p>");
           } else {
-            client.println("<p>LED 1 está APAGADO</p>");
-            client.println("<p>LED 2 está ACESO</p>");
+            client.println("<p>LED 1 esta APAGADO</p>");
+            client.println("<p>LED 2 esta ACESO</p>");
           }
 
-          // Canvas para o gráfico
           client.println("<canvas id='tempChart' width='600' height='300'></canvas>");
 
-          // Script para desenhar o gráfico usando Chart.js e os dados JSON
           client.println("<script>");
           client.println("const ctx = document.getElementById('tempChart').getContext('2d');");
           client.println("const data = " + jsonTemps + ";");
-          client.println("const labels = data.map((_, i) => i + 1);"); // simples labels 1, 2, 3 ...
+          client.println("const labels = data.map((_, i) => i + 1);"); 
           client.println("const chart = new Chart(ctx, {");
           client.println("    type: 'line',");
           client.println("    data: {");
           client.println("        labels: labels,");
           client.println("        datasets: [{");
-          client.println("            label: 'Temperatura (°C)',");
+          client.println("            label: 'Temperatura (C)',");
           client.println("            data: data,");
           client.println("            borderColor: 'rgba(75, 192, 192, 1)',");
           client.println("            backgroundColor: 'rgba(75, 192, 192, 0.2)',");
