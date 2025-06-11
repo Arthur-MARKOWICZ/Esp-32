@@ -6,8 +6,8 @@
 #define LED1 19            
 #define LED2 23          
 
-#define WIFI_SSID ""
-#define WIFI_PASSWORD ""
+#define WIFI_SSID "Arthur"
+#define WIFI_PASSWORD "test1234"
 
 DHT dht(DHTPIN, DHTTYPE);  
 
@@ -94,7 +94,7 @@ void loop() {
           } else{
             client.println("<p>Condicoes desfavoraveis para formar mofo</p>");
           }
-
+          client.println("<p>media de temperatura: " + String(media_temp) + "</p>");
           if (temp >= 20 && temp <= 30) {
             client.println("<p>LED 1 esta ACESO</p>");
             client.println("<p>LED 2 esta APAGADO</p>");
