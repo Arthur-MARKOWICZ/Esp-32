@@ -68,28 +68,39 @@ void loop() {
           for (float t : temperaturas) media_temp += t;
           media_temp /= temperaturas.size();
 
-          // Define os LEDs e cores dinâmicas
-          String colorText;
-          String colorChartBorder;
-          String colorChartBackground;
-          String colorCondition;
+          // Cores fixas para a interface geral
+          String colorText = "#333333";
+          String colorCondition = "#333333";
 
+          // Lógica dos LEDs
           if (temp >= 20 && temp <= 30) {
             digitalWrite(LED1, HIGH);
             digitalWrite(LED2, LOW);
-
-            colorText = "#008000";              // verde forte para texto
-            colorChartBorder = "rgba(0,128,0,1)";    // verde para borda do gráfico
-            colorChartBackground = "rgba(0,128,0,0.2)"; // verde claro para preenchimento
-            colorCondition = "#008000";          // verde para condição
           } else {
             digitalWrite(LED1, LOW);
             digitalWrite(LED2, HIGH);
+          }
 
-            colorText = "#8B0000";              // vermelho escuro para texto
-            colorChartBorder = "rgba(139,0,0,1)";     // vermelho para borda do gráfico
-            colorChartBackground = "rgba(139,0,0,0.2)";  // vermelho claro para preenchimento
-            colorCondition = "#8B0000";          // vermelho para condição
+          // Cores dos gráficos dinâmicas
+          String colorChartTempBorder;
+          String colorChartTempBackground;
+          String colorChartUmidBorder;
+          String colorChartUmidBackground;
+
+          if (temp >= 20 && temp <= 30) {
+            colorChartTempBorder = "rgba(0,128,0,1)";
+            colorChartTempBackground = "rgba(0,128,0,0.2)";
+          } else {
+            colorChartTempBorder = "rgba(139,0,0,1)";
+            colorChartTempBackground = "rgba(139,0,0,0.2)";
+          }
+
+          if (temp >= 20 && temp <= 30 && umidade >= 60) {
+            colorChartUmidBorder = "rgba(0,128,0,1)";
+            colorChartUmidBackground = "rgba(0,128,0,0.2)";
+          } else {
+            colorChartUmidBorder = "rgba(139,0,0,1)";
+            colorChartUmidBackground = "rgba(139,0,0,0.2)";
           }
 
           String jsonTemps = "[";
@@ -241,13 +252,13 @@ void loop() {
 
           client.println("new Chart(document.getElementById('tempChart').getContext('2d'), {");
           client.println("  type: 'line',");
-          client.println("  data: { labels: labels, datasets: [{ label: 'Temperatura (°C)', data: tempData, borderColor: '" + colorChartBorder + "', backgroundColor: '" + colorChartBackground + "', fill: true, tension: 0.1 }] },");
+          client.println("  data: { labels: labels, datasets: [{ label: 'Temperatura (°C)', data: tempData, borderColor: '" + colorChartTempBorder + "', backgroundColor: '" + colorChartTempBackground + "', fill: true, tension: 0.1 }] },");
           client.println("  options: { scales: { y: { beginAtZero: false } }, responsive: true, interaction: { mode: 'nearest', intersect: false } }");
           client.println("});");
 
           client.println("new Chart(document.getElementById('umidChart').getContext('2d'), {");
           client.println("  type: 'line',");
-          client.println("  data: { labels: labels, datasets: [{ label: 'Umidade (%)', data: umidData, borderColor: '" + colorChartBorder + "', backgroundColor: '" + colorChartBackground + "', fill: true, tension: 0.1 }] },");
+          client.println("  data: { labels: labels, datasets: [{ label: 'Umidade (%)', data: umidData, borderColor: '" + colorChartUmidBorder + "', backgroundColor: '" + colorChartUmidBackground + "', fill: true, tension: 0.1 }] },");
           client.println("  options: { scales: { y: { beginAtZero: false } }, responsive: true, interaction: { mode: 'nearest', intersect: false } }");
           client.println("});");
 
