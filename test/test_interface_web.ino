@@ -83,7 +83,7 @@ void loop() {
             digitalWrite(LED2, HIGH);
           }
 
-          // Gera dados em formato JSON
+          // JSON para gráficos
           String jsonTemps = "[";
           String jsonUmids = "[";
           for (size_t i = 0; i < temperaturas.size(); i++) {
@@ -102,10 +102,14 @@ void loop() {
           client.println("Connection: close");
           client.println();
 
-          client.println("<html><head><title>Temperatura</title>");
+          client.println("<html><head><title>Monitoramento</title>");
           client.println("<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>");
+          client.println("<style>");
+          client.println(".grafico-container { display: flex; justify-content: space-around; }");
+          client.println("canvas { max-width: 45%; height: 300px; }");
+          client.println("</style>");
           client.println("</head><body>");
-          client.println("<h1>Temperatura e Controle de LEDs</h1>");
+          client.println("<h1>Temperatura e Umidade</h1>");
           client.println("<p>Temperatura atual: " + String(temp) + " C</p>");
           client.println("<p>Umidade atual: " + String(umidade) + " %</p>");
           if (temp >= 20 && temp <= 30 && umidade >= 60) {
@@ -122,44 +126,34 @@ void loop() {
             client.println("<p>LED 2 esta ACESO</p>");
           }
 
-          client.println("<canvas id='tempChart' width='600' height='300'></canvas>");
+          client.println("<div class='grafico-container'>");
+          client.println("<canvas id='tempChart'></canvas>");
+          client.println("<canvas id='umidChart'></canvas>");
+          client.println("</div>");
 
           client.println("<script>");
-          client.println("const ctx = document.getElementById('tempChart').getContext('2d');");
           client.println("const tempData = " + jsonTemps + ";");
           client.println("const umidData = " + jsonUmids + ";");
           client.println("const labels = tempData.map((_, i) => i + 1);");
 
-          client.println("const chart = new Chart(ctx, {");
+          client.println("new Chart(document.getElementById('tempChart').getContext('2d'), {");
           client.println("  type: 'line',");
-          client.println("  data: {");
-          client.println("    labels: labels,");
-          client.println("    datasets: [");
-          client.println("      {");
-          client.println("        label: 'Temperatura (C)',");
-          client.println("        data: tempData,");
-          client.println("        borderColor: 'rgba(75, 192, 192, 1)',");
-          client.println("        backgroundColor: 'rgba(75, 192, 192, 0.2)',");
-          client.println("        fill: true,");
-          client.println("        tension: 0.1");
-          client.println("      },");
-          client.println("      {");
-          client.println("        label: 'Umidade (%)',");
-          client.println("        data: umidData,");
-          client.println("        borderColor: 'rgba(255, 99, 132, 1)',");
-          client.println("        backgroundColor: 'rgba(255, 99, 132, 0.2)',");
-          client.println("        fill: true,");
-          client.println("        tension: 0.1");
-          client.println("      }");
-          client.println("    ]");
-          client.println("  },");
-          client.println("  options: {");
-          client.println("    scales: {");
-          client.println("      y: {");
-          client.println("        beginAtZero: false");
-          client.println("      }");
-          client.println("    }");
-          client.println("  }");
+          client.println("  data: { labels: labels, datasets: [{");
+          client.println("    label: 'Temperatura (C)',");
+          client.println("    data: tempData,");
+          client.println("    borderColor: 'blue', backgroundColor: 'lightblue', fill: true, tension: 0.1");
+          client.println("  }]},");
+          client.println("  options: { scales: { y: { beginAtZero: false }}}");
+          client.println("});");
+
+          client.println("new Chart(document.getElementById('umidChart').getContext('2d'), {");
+          client.println("  type: 'line',");
+          client.println("  data: { labels: labels, datasets: [{");
+          client.println("    label: 'Umidade (%)',");
+          client.println("    data: umidData,");
+          client.println("    borderColor: 'green', backgroundColor: 'lightgreen', fill: true, tension: 0.1");
+          client.println("  }]},");
+          client.println("  options: { scales: { y: { beginAtZero: false }}}");
           client.println("});");
           client.println("</script>");
 
