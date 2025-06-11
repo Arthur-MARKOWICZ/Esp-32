@@ -106,7 +106,7 @@ void loop() {
           client.println("a { display: inline-block; margin-top: 10px; text-decoration: none; color: white; background-color: #00557f; padding: 8px 16px; border-radius: 4px; transition: background-color 0.3s ease; }");
           client.println("a:hover { background-color: #0073aa; }");
           client.println("</style></head><body>");
-
+          client.println("<meta http-equiv='refresh' content ='10'");
           client.println("<h1>Temperatura e Controle de LEDs</h1>");
           client.println("<p>Temperatura atual: " + String(temp) + " C</p>");
           client.println("<p>Umidade atual: " + String(umidade) + " %</p>");
