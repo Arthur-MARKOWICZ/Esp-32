@@ -7,8 +7,8 @@
 #define LED1 19
 #define LED2 23
 
-#define WIFI_SSID "Arthur"
-#define WIFI_PASSWORD "test1234"
+#define WIFI_SSID "VIVOFIBRA-0FB0"
+#define WIFI_PASSWORD "BAD33538A8"
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -68,11 +68,9 @@ void loop() {
           for (float t : temperaturas) media_temp += t;
           media_temp /= temperaturas.size();
 
-          // Cores fixas para a interface geral
           String colorText = "#333333";
           String colorCondition = "#333333";
 
-          // Lógica dos LEDs
           if (temp >= 20 && temp <= 30) {
             digitalWrite(LED1, HIGH);
             digitalWrite(LED2, LOW);
@@ -81,7 +79,6 @@ void loop() {
             digitalWrite(LED2, HIGH);
           }
 
-          // Cores dos gráficos dinâmicas
           String colorChartTempBorder;
           String colorChartTempBackground;
           String colorChartUmidBorder;
@@ -122,7 +119,7 @@ void loop() {
           client.println("Connection: close");
           client.println();
 
-          client.println("<!DOCTYPE html><html><head><title>Temperatura e Umidade</title>");
+          client.println("<!DOCTYPE html><html><head><title>Sensor OMC</title>");
           client.println("<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>");
           client.println("<style>");
           client.println(R"rawliteral(
@@ -226,19 +223,19 @@ void loop() {
             }
           )rawliteral");
           client.println("</style></head><body>");
-          client.println("<meta http-equiv='refresh' content='10'>");
+          client.println("<meta http-equiv='refresh' content='8'>");
 
           client.println("<h1>Temperatura e Umidade</h1>");
           client.println("<p>Temperatura atual: " + String(temp) + " °C</p>");
           client.println("<p>Umidade atual: " + String(umidade) + " %</p>");
 
           if (temp >= 20 && temp <= 30 && umidade >= 60) {
-            client.println("<p class='condition'>Condições favoráveis para formação de mofo</p>");
+            client.println("<p class='condition'>Condicoes favoraveis para formacao de mofo</p>");
           } else {
-            client.println("<p class='condition'>Condições desfavoráveis para formação de mofo</p>");
+            client.println("<p class='condition'>Condicoes desfavoraveis para formacao de mofo</p>");
           }
 
-          client.println("<p>Média das temperaturas (últimas leituras): " + String(media_temp, 2) + " °C</p>");
+          client.println("<p>Media das temperaturas (ultimas leituras): " + String(media_temp, 2) + " °C</p>");
 
           client.println("<div class='canvas-container'>");
           client.println("<canvas id='tempChart'></canvas>");
